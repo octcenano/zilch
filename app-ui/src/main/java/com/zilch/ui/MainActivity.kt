@@ -24,7 +24,7 @@ import androidx.navigation.navArgument
 import com.zilch.ui.components.BottomNavBar
 import com.zilch.ui.navigation.Routes
 import com.zilch.ui.screens.chat.NearbyChatScreen
-import com.zilch.ui.screens.chat.ChatMessage
+
 import com.zilch.ui.screens.chatlist.ChatListScreen
 import com.zilch.ui.screens.chatlist.ChatPreview
 import com.zilch.ui.screens.contacts.ContactUi
@@ -37,6 +37,9 @@ import com.zilch.ui.screens.qr.QrReceiveScreen
 import com.zilch.ui.screens.qr.QrScanScreen
 import com.zilch.ui.screens.qr.QrScanState
 import com.zilch.ui.screens.settings.SettingsScreen
+import com.zilch.ui.screens.setup.NeedsScreen
+import com.zilch.ui.screens.contacts.TrustedPersonScreen
+import com.zilch.ui.screens.voice.VoiceCallScreen
 import com.zilch.ui.theme.ZilchTheme
 
 class MainActivity : ComponentActivity() {
@@ -87,14 +90,6 @@ fun ZilchNavGraph() {
         )
     }
 
-    val sampleMessages = remember {
-        listOf(
-            ChatMessage("1", "Hola, estoy cerca", true, "14:30"),
-            ChatMessage("2", "¡Hola! ¿Puedes escuchar?", false, "14:31"),
-            ChatMessage("3", "Sí, perfecto. ¿Tienes el archivo?", true, "14:32"),
-            ChatMessage("4", "Sí, te lo envío ahora por BLE", false, "14:33"),
-        )
-    }
 
     val sampleInboxMessages = remember {
         listOf(
@@ -140,7 +135,7 @@ fun ZilchNavGraph() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.ONBOARDING,
+            startDestination = Routes.NEEDS,
             modifier = Modifier.padding(innerPadding)
         ) {
             // ═══ ONBOARDING ═══
@@ -149,6 +144,17 @@ fun ZilchNavGraph() {
                     onComplete = {
                         navController.navigate(Routes.CHATS) {
                             popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // ═══ NECESIDADES (pantalla de permisos/setup) ═══
+            composable(Routes.NEEDS) {
+                NeedsScreen(
+                    onComplete = {
+                        navController.navigate(Routes.CHATS) {
+                            popUpTo(Routes.NEEDS) { inclusive = true }
                         }
                     }
                 )
@@ -193,14 +199,12 @@ fun ZilchNavGraph() {
                     com.zilch.ui.components.TorStatus.INACTIVE -> "Inactivo"
                     com.zilch.ui.components.TorStatus.CHECKING -> "Verificando..."
                     com.zilch.ui.components.TorStatus.KILL_SWITCH -> "Kill Switch"
-                    else -> "Desconocido"
                 }
                 val torStatusColor = when (torStatus) {
                     com.zilch.ui.components.TorStatus.ACTIVE -> Color(0xFF3FB950)
                     com.zilch.ui.components.TorStatus.INACTIVE -> Color(0xFF8B949E)
                     com.zilch.ui.components.TorStatus.CHECKING -> Color(0xFFD29922)
                     com.zilch.ui.components.TorStatus.KILL_SWITCH -> Color(0xFFDA3633)
-                    else -> Color(0xFF8B949E)
                 }
 
                 SettingsScreen(
@@ -231,7 +235,6 @@ fun ZilchNavGraph() {
                 }
 
                 QrReceiveScreen(
-                    qrBitmap = null,
                     fingerprint = fingerprint,
                     timeRemainingSeconds = timeRemaining,
                     onBack = { navController.popBackStack() },
@@ -247,24 +250,6 @@ fun ZilchNavGraph() {
             // ═══ QR ESCANEAR ═══
             composable(Routes.QR_SCAN) {
                 var scanState by remember { mutableStateOf<QrScanState>(QrScanState.Scanning) }
-                var scannedData by remember { mutableStateOf<com.zilch.crypto.qr.QrDecoder.DecodedQr?>(null) }
-
-                val onQrDetected: (String) -> Unit = remember {
-                    { rawPayload: String ->
-                        try {
-                            val decoded = com.zilch.crypto.qr.QrDecoder.decode(rawPayload)
-                            scannedData = decoded
-                            scanState = QrScanState.Scanned(
-                                fingerprint = decoded.fingerprint,
-                                temporaryAddress = decoded.temporaryAddress
-                            )
-                        } catch (e: Exception) {
-                            scanState = QrScanState.Error(
-                                message = e.message ?: "Error al decodificar QR"
-                            )
-                        }
-                    }
-                }
 
                 QrScanScreen(
                     scanState = scanState,
@@ -273,7 +258,6 @@ fun ZilchNavGraph() {
                     },
                     onRetryScan = {
                         scanState = QrScanState.Scanning
-                        scannedData = null
                     },
                     onBack = { navController.popBackStack() },
                     onEmergencyTriggered = {
@@ -313,6 +297,13 @@ fun ZilchNavGraph() {
                 )
             }
 
+            // ═══ PERSONAS DE CONFIANZA ═══
+            composable(Routes.TRUSTED_PERSONS) {
+                TrustedPersonScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
             // ═══ CHAT CERCANO ═══
             composable(
                 route = Routes.NEARBY_CHAT,
@@ -320,13 +311,12 @@ fun ZilchNavGraph() {
                     navArgument("peerNodeId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
+                @Suppress("UNUSED_VARIABLE")
                 val peerNodeId = backStackEntry.arguments?.getString("peerNodeId") ?: ""
 
                 NearbyChatScreen(
                     peerFingerprint = "a3f2-8b1c-4d5e",
-                    messages = sampleMessages,
                     isConnected = true,
-                    onSendMessage = { text -> },
                     onBack = { navController.popBackStack() },
                     onEmergencyTriggered = {
                         homeViewModel.emergencyDestroy()
@@ -334,6 +324,37 @@ fun ZilchNavGraph() {
                             popUpTo(0) { inclusive = true }
                         }
                     }
+                )
+            }
+
+            // ═══ LLAMADA DE VOZ BLE ═══
+            composable(
+                route = Routes.VOICE_CALL,
+                arguments = listOf(
+                    navArgument("peerNodeId") { type = NavType.StringType }
+                )
+            ) {
+                var callDuration by remember { mutableIntStateOf(0) }
+                var isMuted by remember { mutableStateOf(false) }
+                var isSpeakerOn by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        kotlinx.coroutines.delay(1000L)
+                        callDuration++
+                    }
+                }
+
+                VoiceCallScreen(
+                    peerFingerprint = "a3f2-8b1c-4d5e",
+                    isConnected = true,
+                    callDuration = callDuration,
+                    isMuted = isMuted,
+                    isSpeakerOn = isSpeakerOn,
+                    onToggleMute = { isMuted = !isMuted },
+                    onToggleSpeaker = { isSpeakerOn = !isSpeakerOn },
+                    onEndCall = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
                 )
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -32,28 +33,77 @@ enum class TorStatus {
  *
  * Se muestra en la parte superior de la pantalla de inicio.
  * Cambia de color y texto según el estado actual.
+ *
+ * CHECKING se muestra como una barra horizontal sutil en lugar
+ * de una tarjeta completa para no alarmar al usuario.
  */
 @Composable
 fun TorStatusIndicator(
     status: TorStatus,
     modifier: Modifier = Modifier
 ) {
+    // CHECKING: subtle info bar, not a full card
+    if (status == TorStatus.CHECKING) {
+        val animatedColor by animateColorAsState(
+            targetValue = DarkPalette.torChecking,
+            animationSpec = tween(300),
+            label = "tor_checking_color"
+        )
+
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(DarkPalette.surfaceVariant.copy(alpha = 0.6f))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Small animated dot
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(animatedColor)
+            )
+
+            Icon(
+                imageVector = Icons.Default.Sync,
+                contentDescription = null,
+                tint = animatedColor,
+                modifier = Modifier.size(16.dp)
+            )
+
+            Text(
+                text = "Verificando conexión...",
+                style = MaterialTheme.typography.bodySmall,
+                color = DarkPalette.textMuted,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        return
+    }
+
+    // All other states: full card (original behavior)
     val (color, icon, text) = when (status) {
         TorStatus.ACTIVE -> Triple(
             DarkPalette.torActive,
             Icons.Default.CheckCircle,
             "Tor Activo"
         )
+
         TorStatus.INACTIVE -> Triple(
             DarkPalette.torInactive,
             Icons.Default.Cancel,
             "Tor Inactivo"
         )
+
         TorStatus.CHECKING -> Triple(
             DarkPalette.torChecking,
             Icons.Default.Sync,
             "Verificando..."
         )
+
         TorStatus.KILL_SWITCH -> Triple(
             DarkPalette.emergency,
             Icons.Default.Shield,
@@ -97,9 +147,11 @@ fun TorStatusIndicator(
                 modifier = Modifier
                     .size(12.dp)
                     .clip(CircleShape)
-                    .background(animatedColor.copy(
-                        alpha = if (status == TorStatus.ACTIVE) pulseScale else 1f
-                    ))
+                    .background(
+                        animatedColor.copy(
+                            alpha = if (status == TorStatus.ACTIVE) pulseScale else 1f
+                        )
+                    )
             )
 
             // Icono

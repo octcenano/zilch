@@ -2,7 +2,7 @@ package com.zilch.ui.screens.qr
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
@@ -23,13 +23,16 @@ import com.zilch.ui.theme.DarkPalette
 sealed class QrScanState {
     /** Esperando escaneo */
     object Scanning : QrScanState()
+
     /** QR escaneado, mostrando fingerprint para verificación */
     data class Scanned(
         val fingerprint: String,
         val temporaryAddress: String
     ) : QrScanState()
+
     /** Contacto confirmado y añadido */
     object Confirmed : QrScanState()
+
     /** Error en el escaneo */
     data class Error(val message: String) : QrScanState()
 }
@@ -65,7 +68,7 @@ fun QrScanScreen(
                 title = { Text("Escanear QR") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

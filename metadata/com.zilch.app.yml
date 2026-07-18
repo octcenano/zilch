@@ -1,3 +1,20 @@
+Name: Zilch
+Summary: Comunicación cifrada P2P offline
+Description: |
+  Zilch es una aplicación de comunicación cifrada de extremo a extremo
+  que funciona SIN conexión a internet. Los mensajes viajan entre
+  dispositivos cercanos a través de Bluetooth LE en una red mesh
+  descentralizada. No hay servidores, no hay vigilancia, no hay rastro.
+
+  Características principales:
+  - Mensajería cifrada P2P por Bluetooth LE
+  - Red mesh autónoma sin internet
+  - Identidad efímera con auto-regeneración
+  - Kill Switch de emergencia
+  - Verificación de identidad por QR + fingerprint verbal
+  - Base de datos local cifrada con SQLCipher
+  - Sin Google Play Services, sin Firebase, sin tracking
+
 Categories:
   - Security
   - Instant Messaging

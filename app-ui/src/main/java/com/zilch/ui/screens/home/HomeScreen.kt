@@ -49,14 +49,12 @@ fun HomeScreen(
     onNavigateToQrReceive: () -> Unit,
     onNavigateToQrScan: () -> Unit,
     onNavigateToInbox: () -> Unit,
-    onNavigateToContacts: () -> Unit,
-    onNavigateToChat: (String) -> Unit
+    onNavigateToContacts: () -> Unit
 ) {
     val torStatus by viewModel.torStatus.collectAsState()
     val fingerprint by viewModel.fingerprint.collectAsState()
     val peerCount by viewModel.peerCount.collectAsState()
     val sessionCount by viewModel.sessionCount.collectAsState()
-    val isKillSwitchActive by viewModel.isKillSwitchActive.collectAsState()
 
     // Dialog de confirmación de emergencia
     var showEmergencyDialog by remember { mutableStateOf(false) }
@@ -253,8 +251,8 @@ fun HomeScreen(
             text = {
                 Text(
                     text = "Esta acción destruirá tu identidad, todos los contactos, " +
-                           "sesiones activas y activará el Kill Switch de red. " +
-                           "Esta acción es IRREVERSIBLE."
+                            "sesiones activas y activará el Kill Switch de red. " +
+                            "Esta acción es IRREVERSIBLE."
                 )
             },
             confirmButton = {

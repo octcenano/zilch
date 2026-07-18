@@ -4,12 +4,18 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group android:translateX="26" android:translateY="26">
-        <path
-            android:fillColor="#58A6FF"
-            android:pathData="M28,0C12.536,0 0,12.536 0,28s12.536,28 28,28s28,-12.536 28,-28S43.464,0 28,0zM28,50C15.85,50 6,40.15 6,28S15.85,6 28,6s22,9.85 22,22S40.15,50 28,50z"/>
-        <path
-            android:fillColor="#58A6FF"
-            android:pathData="M28,12C19.163,12 12,19.163 12,28s7.163,16 16,16s16,-7.163 16,-16S36.837,12 28,12zM28,38c-5.523,0 -10,-4.477 -10,-10s4.477,-10 10,-10s10,4.477 10,10S33.523,38 28,38z"/>
-    </group>
+
+    <!-- Shield shape -->
+    <path
+        android:fillColor="#58A6FF"
+        android:pathData="M54,14 C50,14 36,18 30,24 L30,48 C30,64 40,76 54,82 C68,76 78,64 78,48 L78,24 C72,18 58,14 54,14 Z" />
+
+    <!-- "Z" letter inside the shield -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M42,34 L66,34 L43,60 L67,60" />
+
 </vector>

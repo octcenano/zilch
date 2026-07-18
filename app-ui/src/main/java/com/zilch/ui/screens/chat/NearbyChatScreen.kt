@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zilch.ui.components.ChatBubble
 import com.zilch.ui.theme.DarkPalette
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Modelo de mensaje para el chat cercano.
@@ -58,19 +62,26 @@ data class ChatMessage(
 @Composable
 fun NearbyChatScreen(
     peerFingerprint: String,
-    messages: List<ChatMessage>,
+    messages: List<ChatMessage> = emptyList(),
     isConnected: Boolean,
-    onSendMessage: (String) -> Unit,
     onBack: () -> Unit,
     onEmergencyTriggered: (() -> Unit)? = null
 ) {
     var inputText by remember { mutableStateOf("") }
+    val chatMessages = remember { mutableStateListOf<ChatMessage>() }
     val listState = rememberLazyListState()
 
+    // Initialize internal list from passed-in messages
+    LaunchedEffect(messages) {
+        if (chatMessages.isEmpty() && messages.isNotEmpty()) {
+            chatMessages.addAll(messages)
+        }
+    }
+
     // Auto-scroll al último mensaje
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+    LaunchedEffect(chatMessages.size) {
+        if (chatMessages.isNotEmpty()) {
+            listState.animateScrollToItem(chatMessages.size - 1)
         }
     }
 
@@ -110,7 +121,16 @@ fun NearbyChatScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Navigate to voice call */ }) {
+                        Icon(
+                            Icons.Default.Call,
+                            contentDescription = "Llamada de voz",
+                            tint = DarkPalette.secondary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -162,8 +182,36 @@ fun NearbyChatScreen(
                         FilledIconButton(
                             onClick = {
                                 if (inputText.isNotBlank()) {
-                                    onSendMessage(inputText.trim())
+                                    val userText = inputText.trim()
                                     inputText = ""
+
+                                    val timeNow = java.text.SimpleDateFormat(
+                                        "HH:mm", java.util.Locale.getDefault()
+                                    ).format(java.util.Date())
+
+                                    chatMessages.add(
+                                        ChatMessage(
+                                            id = "local_${System.currentTimeMillis()}",
+                                            content = userText,
+                                            isFromLocal = true,
+                                            timestamp = timeNow
+                                        )
+                                    )
+
+                                    // Simulate a reply after 2 seconds
+                                    val msgId = "reply_${System.currentTimeMillis()}"
+                                    val capturedTime = timeNow
+                                    kotlinx.coroutines.MainScope().launch {
+                                        delay(2000L)
+                                        chatMessages.add(
+                                            ChatMessage(
+                                                id = msgId,
+                                                content = "[BLE] Mensaje recibido: $userText",
+                                                isFromLocal = false,
+                                                timestamp = capturedTime
+                                            )
+                                        )
+                                    }
                                 }
                             },
                             enabled = inputText.isNotBlank() && isConnected,
@@ -173,7 +221,7 @@ fun NearbyChatScreen(
                                 disabledContainerColor = DarkPalette.surfaceVariant
                             )
                         ) {
-                            Icon(Icons.Default.Send, contentDescription = "Enviar")
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar")
                         }
                     }
                 }
@@ -186,7 +234,7 @@ fun NearbyChatScreen(
                 .padding(padding)
         ) {
             // ═══ LISTA DE MENSAJES ═══
-            if (messages.isEmpty()) {
+            if (chatMessages.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -207,7 +255,7 @@ fun NearbyChatScreen(
                     contentPadding = PaddingValues(vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(messages, key = { it.id }) { message ->
+                    items(chatMessages, key = { it.id }) { message ->
                         ChatBubble(
                             text = message.content,
                             isFromLocal = message.isFromLocal,

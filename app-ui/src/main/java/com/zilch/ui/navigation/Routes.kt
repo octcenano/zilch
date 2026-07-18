@@ -28,4 +28,14 @@ object Routes {
 
     /** Contactos verificados */
     const val CONTACTS = "contacts"
+
+    /** Pantalla de necesidades / permisos previos al uso */
+    const val NEEDS = "needs"
+
+    /** Personas de confianza — gestión de contactos verificados */
+    const val TRUSTED_PERSONS = "trusted_persons"
+
+    /** Llamada de voz por BLE */
+    const val VOICE_CALL = "voice_call/{peerNodeId}"
+    fun voiceCall(peerNodeId: String) = "voice_call/$peerNodeId"
 }

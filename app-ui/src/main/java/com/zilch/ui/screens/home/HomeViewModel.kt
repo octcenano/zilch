@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.zilch.blemesh.BleMeshEngine
 import com.zilch.crypto.CryptoEngine
 import com.zilch.ui.components.TorStatus
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * HomeViewModel — Estado y lógica de la pantalla de inicio.
@@ -48,12 +50,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun loadIdentity() {
-        try {
-            refreshIdentity()
-        } catch (e: Exception) {
-            _fingerprint.value = "error"
-            _nodeId.value = "error"
-        }
+        _fingerprint.value = "Cargando..."
+        _nodeId.value = "Cargando..."
+        refreshIdentity()
     }
 
     /**
@@ -65,14 +64,23 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Actualiza el fingerprint desde CryptoEngine.
+     * Si falla, reintenta después de un breve delay.
      */
     fun refreshIdentity() {
-        try {
-            _fingerprint.value = cryptoEngine.getCurrentFingerprint()
-            _nodeId.value = cryptoEngine.getCurrentNodeId()
-        } catch (e: Exception) {
-            _fingerprint.value = "error"
-            _nodeId.value = "error"
+        viewModelScope.launch {
+            try {
+                _fingerprint.value = cryptoEngine.getCurrentFingerprint()
+                _nodeId.value = cryptoEngine.getCurrentNodeId()
+            } catch (e: Exception) {
+                delay(1_000L)
+                try {
+                    _fingerprint.value = cryptoEngine.getCurrentFingerprint()
+                    _nodeId.value = cryptoEngine.getCurrentNodeId()
+                } catch (_: Exception) {
+                    _fingerprint.value = "Cargando..."
+                    _nodeId.value = "Cargando..."
+                }
+            }
         }
     }
 

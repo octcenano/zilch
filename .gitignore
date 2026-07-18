@@ -10,3 +10,6 @@ nohup.out
 *.log
 sdk_install.log
 install_sdk.sh
+build2.txt
+build_err.txt
+do_build.sh

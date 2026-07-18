@@ -3,6 +3,9 @@ package com.zilch.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,10 +49,10 @@ fun ChatBubble(
                 .widthIn(max = 280.dp)
                 .clip(
                     RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isFromLocal) 16.dp else 4.dp,
-                        bottomEnd = if (isFromLocal) 4.dp else 16.dp
+                        topStart = 18.dp,
+                        topEnd = 18.dp,
+                        bottomStart = if (isFromLocal) 18.dp else 4.dp,
+                        bottomEnd = if (isFromLocal) 4.dp else 18.dp
                     )
                 )
                 .background(bubbleColor)
@@ -64,12 +67,26 @@ fun ChatBubble(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = timestamp,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = DarkPalette.textMuted,
-                    fontSize = 10.sp
-                )
+                // Timestamp + checkmark for sent messages (WhatsApp-style grey ticks)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isFromLocal) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Enviado",
+                            tint = DarkPalette.textMuted,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Text(
+                        text = timestamp,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = DarkPalette.textMuted,
+                        fontSize = 10.sp
+                    )
+                }
             }
         }
     }

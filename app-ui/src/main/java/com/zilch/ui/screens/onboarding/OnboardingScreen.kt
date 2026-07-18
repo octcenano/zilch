@@ -5,6 +5,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -168,7 +169,6 @@ fun OnboardingScreen(onComplete: () -> Unit) {
             ) { pageIndex ->
                 OnboardingPageContent(
                     page = onboardingPages[pageIndex],
-                    isCurrentPage = pagerState.currentPage == pageIndex,
                 )
             }
 
@@ -273,7 +273,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                                     letterSpacing = 2.sp,
                                 )
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowForward,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = "Siguiente",
                                     modifier = Modifier.size(20.dp),
                                 )
@@ -290,7 +290,6 @@ fun OnboardingScreen(onComplete: () -> Unit) {
 @Composable
 private fun OnboardingPageContent(
     page: OnboardingPage,
-    isCurrentPage: Boolean,
 ) {
     Column(
         modifier = Modifier

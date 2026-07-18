@@ -3,8 +3,7 @@ package com.zilch.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -15,11 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zilch.ui.theme.DarkPalette
+import kotlinx.coroutines.delay
 
 /**
  * EmergencyButton — Barra roja persistente de "Cerrar y Destruir".
@@ -32,9 +33,8 @@ import com.zilch.ui.theme.DarkPalette
  * de la pantalla. No se puede ocultar, minimizar o cubrir.
  *
  * Flujo de activación:
- * 1. Toque → Muestra confirmación ("¿Destruir todo?")
- * 2. Mantener 3 segundos → Confirmación automática
- * 3. Confirmación → Destruye identidad, contactos, Kill Switch
+ * 1. Mantener presionado 3 segundos → Confirmación automática
+ * 2. Confirmación → Destruye identidad, contactos, Kill Switch
  *
  * ¿Por qué mantener 3 segundos?
  * Para prevenir activaciones accidentales mientras se mantiene
@@ -48,8 +48,8 @@ fun EmergencyButton(
     onEmergencyTriggered: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isConfirming by remember { mutableStateOf(false) }
     var holdProgress by remember { mutableFloatStateOf(0f) }
+    var isHolding by remember { mutableStateOf(false) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -63,12 +63,26 @@ fun EmergencyButton(
     )
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isConfirming) DarkPalette.emergency else DarkPalette.emergencyDark,
+        targetValue = if (isHolding) DarkPalette.emergency else DarkPalette.emergencyDark,
         animationSpec = tween(200),
         label = "bg_color"
     )
 
-    val interactionSource = remember { MutableInteractionSource() }
+    // Animate progress while holding
+    LaunchedEffect(isHolding) {
+        if (isHolding) {
+            val steps = 100
+            val stepDelay = 3000L / steps // 3 seconds total
+            for (i in 1..steps) {
+                holdProgress = i / steps.toFloat()
+                delay(stepDelay)
+            }
+            // Completed the hold — trigger emergency
+            onEmergencyTriggered()
+        } else {
+            holdProgress = 0f
+        }
+    }
 
     Box(
         modifier = modifier
@@ -82,15 +96,14 @@ fun EmergencyButton(
                     )
                 )
             )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) {
-                if (!isConfirming) {
-                    isConfirming = true
-                } else {
-                    onEmergencyTriggered()
-                }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isHolding = true
+                        awaitRelease()
+                        isHolding = false
+                    }
+                )
             }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
@@ -107,7 +120,7 @@ fun EmergencyButton(
             )
 
             Text(
-                text = if (isConfirming) "TOQUE DE NUEVO PARA DESTRUIR" else "CERRAR Y DESTRUIR",
+                text = if (isHolding) "MANTENGA PARA DESTRUIR" else "CERRAR Y DESTRUIR",
                 color = DarkPalette.onError,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
@@ -115,8 +128,7 @@ fun EmergencyButton(
                 textAlign = TextAlign.Center
             )
 
-            if (isConfirming) {
-                // Barra de progreso de mantención
+            if (isHolding) {
                 LinearProgressIndicator(
                     progress = holdProgress,
                     modifier = Modifier
@@ -126,18 +138,6 @@ fun EmergencyButton(
                     trackColor = DarkPalette.onError.copy(alpha = 0.3f),
                 )
             }
-        }
-    }
-
-    // Auto-cancel after 5 seconds if not confirmed
-    LaunchedEffect(isConfirming) {
-        if (isConfirming) {
-            for (i in 0..100) {
-                holdProgress = i / 100f
-                kotlinx.coroutines.delay(50)
-            }
-            isConfirming = false
-            holdProgress = 0f
         }
     }
 }

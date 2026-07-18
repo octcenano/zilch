@@ -10,8 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -49,13 +52,22 @@ fun BottomNavBar(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Divider(color = DividerColor, thickness = 0.5.dp)
+    val dividerStroke = with(LocalDensity.current) { 0.5.dp.toPx() }
 
     NavigationBar(
         containerColor = NavBarColor,
         contentColor = ActiveColor,
         tonalElevation = 0.dp,
-        modifier = modifier.height(60.dp)
+        modifier = modifier
+            .height(64.dp)
+            .drawBehind {
+                drawLine(
+                    color = DividerColor,
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = dividerStroke
+                )
+            }
     ) {
         bottomNavItems.forEach { item ->
             val selected = currentRoute == item.route

@@ -44,9 +44,9 @@ fun FingerprintDisplay(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(DarkPalette.surfaceVariant)
-            .padding(20.dp),
+            .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         // Etiqueta
         Text(
@@ -54,16 +54,16 @@ fun FingerprintDisplay(
             style = MaterialTheme.typography.labelSmall,
             color = DarkPalette.textMuted,
             letterSpacing = 2.sp,
-            fontSize = 10.sp
+            fontSize = 9.sp
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
 
         // Fingerprint en grupos legibles
         groups.forEach { group ->
             Text(
                 text = group.uppercase(),
-                style = MaterialTheme.typography.displayMedium.copy(
+                style = MaterialTheme.typography.titleLarge.copy(
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 4.sp
