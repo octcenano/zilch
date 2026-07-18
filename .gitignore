@@ -1,0 +1,18 @@
+# Build outputs
+build/
+.gradle/
+local.properties
+*.apk
+*.aab
+*.iml
+.idea/
+*.hprof
+nohup.out
+
+# Gradle wrapper
+# gradle/wrapper/gradle-wrapper.jar  # ← descomentar si quieres subir el wrapper
+
+# Logs
+*.log
+sdk_install.log
+install_sdk.sh
