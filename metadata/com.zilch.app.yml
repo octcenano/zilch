@@ -1,0 +1,19 @@
+Categories:
+  - Security
+  - Instant Messaging
+  - FOSS
+License: MIT
+SourceCode: https://github.com/octcenano/zilch
+IssueTracker: https://github.com/octcenano/zilch/issues
+Translation: false
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+
+Builds:
+  - versionName: 0.1.0-alpha
+    versionCode: 1
+    commit: v0.1.0-alpha
+    subdir: app-ui
+    gradle:
+      - yes

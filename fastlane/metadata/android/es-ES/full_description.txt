@@ -1,0 +1,21 @@
+Zilch es una aplicación de comunicación offline y antivigilancia diseñada para situaciones de alta censura y vigilancia estatal.
+
+Funcionalidades principales:
+
+• Mensajería cifrada peer-to-peer vía Bluetooth LE sin necesidad de internet
+• Red malla (mesh networking) para comunicación en zonas sin cobertura
+• Enrutamiento de tráfico por Tor/SOCKS5 con Kill Switch integrado
+• Cifrado de extremo a extremo con AES-256-GCM y firmas Ed25519
+• Almacenamiento cifrado con SQLCipher (base de datos Zero-Knowledge)
+• Verificación de identidad offline mediante códigos QR y fingerprints verbales
+• Botón de pánico forense que destruye toda la información sensible
+• Soporte para puentes Tor (obfs4/Snowflake) para evadir DPI
+
+Principios de diseño:
+
+• Cero costes: 100% código abierto, sin servicios de pago
+• Cero servidores: todo ocurre localmente o peer-to-peer
+• Cero rastreo: sin Firebase, sin Play Services, sin analytics
+• F-Droid compliant: sin dependencias propietarias
+
+Zilch está diseñado para periodistas, activistas y cualquier persona que necesite comunicarse de forma segura en entornos hostiles.

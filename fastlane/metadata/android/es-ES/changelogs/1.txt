@@ -1,0 +1,8 @@
+Primera versión alpha de Zilch.
+
+- Motor de red Anonsurf con Tor/SOCKS5 y Kill Switch
+- Motor criptográfico con Ed25519, QR y SQLCipher
+- Red mesh BLE con cifrado AES-256-GCM
+- Interfaz Jetpack Compose con 5 pantallas
+- Botón de pánico forense
+- Verificación de identidad offline
