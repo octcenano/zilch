@@ -42,3 +42,13 @@
 -keep class java.security.spec.EdDSAKey { *; }
 -keep class java.security.spec.EdDSAPrivateKeySpec { *; }
 -keep class java.security.spec.EdDSAPublicKeySpec { *; }
+
+# SQLCipher
+-keep class net.zetetic.** { *; }
+-dontwarn net.zetetic.**
+-keep class net.sqlcipher.** { *; }
+-dontwarn net.sqlcipher.**
+
+# ZXing
+-keep class com.google.zxing.** { *; }
+-dontwarn com.google.zxing.**

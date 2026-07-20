@@ -16,8 +16,7 @@ Description: |
   - Sin Google Play Services, sin Firebase, sin tracking
 
 Categories:
-  - Security
-  - Instant Messaging
+  - InstantMessaging
   - FOSS
 License: MIT
 SourceCode: https://github.com/octcenano/zilch

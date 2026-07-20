@@ -6,6 +6,7 @@ import com.zilch.anonsurf.config.TorConfig
 import com.zilch.anonsurf.exception.AnonsurfException
 import com.zilch.anonsurf.killswitch.NetworkKillSwitch
 import com.zilch.anonsurf.network.TorProxyClient
+import com.zilch.anonsurf.tor.TorManager
 import com.zilch.anonsurf.verification.TorIpVerifier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,32 +24,44 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * Este orquestador integra los tres componentes del módulo de red:
  *
- * ┌──────────────────────────────────────────────────────────┐
- * │                    AnonsurfEngine                        │
- * │  (Fachada que expone la API pública para el resto de     │
- * │   la aplicación y coordina los componentes)              │
- * ├──────────────┬──────────────┬────────────────────────────┤
- * │  TorIpVerifier│ KillSwitch   │  TorProxyClient           │
- * │  (Verifica    │ (Bloquea    │  (Enruta todo el           │
- * │   que somos   │  la red si  │   tráfico HTTP/S           │
- * │   Tor)        │  Tor cae)   │   por SOCKS5/Tor)          │
- * └──────────────┴──────────────┴────────────────────────────┘
+ * ┌──────────────────────────────────────────────────────────────────┐
+ * │                         AnonsurfEngine                           │
+ * │   (Fachada que expone la API pública para el resto de           │
+ * │    la aplicación y coordina los componentes)                    │
+ * ├──────────┬──────────┬──────────────┬────────────────────────────┤
+ * │TorManager│ TorIpVer │ KillSwitch   │  TorProxyClient            │
+ * │ (Starts  │ (Checks  │ (Blocks all  │  (Routes all HTTP/S        │
+ * │  local   │  we're   │  network if  │   through SOCKS5/Tor)      │
+ * │  Tor or  │  really  │  Tor drops)  │                            │
+ * │  Orbot)  │  on Tor) │              │                            │
+ * └──────────┴──────────┴──────────────┴────────────────────────────┘
  *
  * USO:
  * ```kotlin
- * // En tu ViewModel o Activity principal
+ * // In your ViewModel or main Activity
  * val engine = AnonsurfEngine.getInstance(context)
  *
- * // Iniciar el motor (verifica Tor + activa Kill Switch)
+ * // Start the engine (launches local Tor or falls back to Orbot,
+ * // then verifies the connection and activates the Kill Switch)
  * engine.start()
  *
- * // Hacer una petición segura a través de Tor
+ * // Observe Tor process state (optional, for UI)
+ * engine.torManagerState.collect { state ->
+ *     when (state) {
+ *         TorManager.TorState.READY -> { /* show connected */ }
+ *         TorManager.TorState.BOOTSTRAPPING -> { /* show progress */ }
+ *         TorManager.TorState.ERROR -> { /* show error */ }
+ *         else -> { /* ... */ }
+ *     }
+ * }
+ *
+ * // Make a secure request through Tor
  * val response = engine.executeSecureRequest(request)
  *
- * // Verificar estado
+ * // Check status
  * if (engine.isReady) { ... }
  *
- * // En emergencia: destruir todo
+ * // Emergency: destroy everything
  * engine.emergencyStop()
  * ```
  *
@@ -92,6 +105,14 @@ class AnonsurfEngine private constructor(private val context: Context) {
 
     // ── Componentes internos ────────────────────────────────────────
 
+    /**
+     * TorManager — manages the embedded Tor process or Orbot fallback.
+     * This is the component that makes Tor work without requiring Orbot
+     * to be pre-installed. It starts a local Tor process if a binary is
+     * available, or probes for Orbot as a fallback.
+     */
+    val torManager = TorManager(context)
+
     val killSwitch = NetworkKillSwitch()
     private val proxyClient = TorProxyClient(killSwitch)
     private val httpClient = proxyClient.buildClient()
@@ -111,6 +132,18 @@ class AnonsurfEngine private constructor(private val context: Context) {
     private val _torStatus = MutableStateFlow(TorIpVerifier.TorStatus.UNREACHABLE)
     val torStatus: StateFlow<TorIpVerifier.TorStatus> = _torStatus.asStateFlow()
 
+    /** Observable state of the embedded Tor process */
+    val torManagerState: StateFlow<TorManager.TorState>
+        get() = torManager.state
+
+    /** Observable bootstrap progress (0–100) of the local Tor process */
+    val torBootstrapProgress: StateFlow<Int>
+        get() = torManager.bootstrapProgress
+
+    /** Which Tor source is currently in use (LOCAL, ORBOT, NONE) */
+    val torSource: StateFlow<TorManager.TorSource>
+        get() = torManager.source
+
     /** Scope de coroutines propio del motor */
     @Volatile
     private var engineScope: CoroutineScope? = null
@@ -126,12 +159,14 @@ class AnonsurfEngine private constructor(private val context: Context) {
      * Este es el punto de entrada que debe llamarse en la inicialización
      * de la app (o al crear la Activity principal). Realiza:
      *
-     * 1. Verificación de que el proxy Tor está activo
-     * 2. Verificación de que el tráfico sale por un nodo Tor
-     * 3. Activación del monitoreo proactivo del proxy
+     * Startup sequence:
+     *  1. Launch embedded Tor (or detect Orbot) via TorManager
+     *  2. Wait for the SOCKS5 proxy to become available
+     *  3. Verify traffic is actually routing through Tor
+     *  4. Activate proactive proxy monitoring (Kill Switch)
      *
-     * @param scope CoroutineScope para las operaciones asíncronas
-     *               (usualmente el viewModelScope de la Activity)
+     * @param scope CoroutineScope for async operations
+     *               (typically viewModelScope of the Activity)
      */
     fun start(scope: CoroutineScope) {
         if (_isReady.get()) {
@@ -145,9 +180,19 @@ class AnonsurfEngine private constructor(private val context: Context) {
 
         Log.i(TAG, "🚀 Iniciando motor Anonsurf...")
 
+        // Step 1: Start TorManager (local binary or Orbot fallback)
+        val usedLocalTor = torManager.start(scope)
+        val torSourceLabel = if (usedLocalTor) "local" else "Orbot"
+        Log.i(TAG, "Tor source: $torSourceLabel")
+
+        // Step 2: Wait for TorManager to reach READY, then verify
         engineScope?.launch {
             try {
-                // Paso 1: Verificar conexión Tor
+                // Wait for the proxy to become available
+                // (TorManager handles the timeout internally)
+                waitForProxyReady()
+
+                // Step 3: Verify we're actually on Tor
                 val status = ipVerifier.verifyTorConnection()
                 if (status == TorIpVerifier.TorStatus.ACTIVE) {
                     _isTorVerified.set(true)
@@ -155,12 +200,12 @@ class AnonsurfEngine private constructor(private val context: Context) {
                     onTorStatusChanged?.invoke(true)
                 }
 
-                // Paso 2: Activar monitoreo del proxy
+                // Step 4: Activate proxy monitoring
                 startProxyMonitoring()
 
-                // Paso 3: Marcar como listo
+                // Step 5: Mark as ready
                 _isReady.set(true)
-                Log.i(TAG, "✅ Motor Anonsurf listo — Tor verificado, Kill Switch activo")
+                Log.i(TAG, "✅ Motor Anonsurf listo — Tor ($torSourceLabel) verificado, Kill Switch activo")
 
             } catch (e: AnonsurfException.IpLeakDetected) {
                 // CRITICO: IP expuesta fuera de Tor
@@ -186,11 +231,13 @@ class AnonsurfEngine private constructor(private val context: Context) {
 
     /**
      * Detiene el motor y libera recursos.
+     * Also stops the embedded Tor process if we started one.
      */
     fun stop() {
         Log.i(TAG, "Deteniendo motor Anonsurf...")
         engineScope?.cancel()
         engineScope = null
+        torManager.stop()
         _isReady.set(false)
         _isTorVerified.set(false)
     }
@@ -206,6 +253,7 @@ class AnonsurfEngine private constructor(private val context: Context) {
      */
     fun emergencyStop() {
         Log.e(TAG, "🚨 PARADA DE EMERGENCIA")
+        torManager.stop()
         stop()
         killSwitch.activate("Parada de emergencia activada")
     }
@@ -301,6 +349,49 @@ class AnonsurfEngine private constructor(private val context: Context) {
     }
 
     // ── Lógica interna ──────────────────────────────────────────────
+
+    /**
+     * Wait for the TorManager to reach READY state, or throw on failure.
+     *
+     * This polls the TorManager state with a short delay, giving the
+     * embedded process (or Orbot detection) time to become ready.
+     *
+     * @throws AnonsurfException.TorProxyUnavailable if TorManager enters ERROR
+     * @throws CancellationException if the engine scope is cancelled
+     */
+    private suspend fun waitForProxyReady() {
+        val deadline = System.currentTimeMillis() + TorConfig.CONNECTION_TIMEOUT_MS
+
+        while (System.currentTimeMillis() < deadline) {
+            when (torManager.state.value) {
+                TorManager.TorState.READY -> {
+                    Log.d(TAG, "Tor proxy is ready")
+                    return
+                }
+
+                TorManager.TorState.ERROR -> {
+                    val errMsg = torManager.errorMessage.value ?: "Unknown error"
+                    throw AnonsurfException.TorProxyUnavailable(
+                        message = "TorManager error: $errMsg"
+                    )
+                }
+
+                TorManager.TorState.STOPPED -> {
+                    throw AnonsurfException.TorProxyUnavailable(
+                        message = "TorManager stopped unexpectedly"
+                    )
+                }
+                // STARTING or BOOTSTRAPPING — keep waiting
+                else -> { /* continue polling */
+                }
+            }
+            delay(500)
+        }
+
+        throw AnonsurfException.TorProxyUnavailable(
+            message = "Timed out waiting for Tor proxy to become available"
+        )
+    }
 
     /**
      * Inicia el monitoreo proactivo del proxy Tor.

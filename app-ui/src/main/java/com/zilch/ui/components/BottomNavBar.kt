@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,8 +43,8 @@ data class NavItem(
 )
 
 val bottomNavItems = listOf(
-    NavItem("chats", "Chats", Icons.Default.ChatBubbleOutline),
-    NavItem("inbox", "Bandeja", Icons.Default.MailOutline),
+    NavItem("chats", "Chats", Icons.AutoMirrored.Filled.Chat),
+    NavItem("groups", "Grupos", Icons.Default.People),
     NavItem("settings", "Ajustes", Icons.Default.Settings),
 )
 
@@ -59,7 +61,6 @@ fun BottomNavBar(
         contentColor = ActiveColor,
         tonalElevation = 0.dp,
         modifier = modifier
-            .height(64.dp)
             .drawBehind {
                 drawLine(
                     color = DividerColor,
@@ -68,6 +69,7 @@ fun BottomNavBar(
                     strokeWidth = dividerStroke
                 )
             }
+            .navigationBarsPadding()
     ) {
         bottomNavItems.forEach { item ->
             val selected = currentRoute == item.route

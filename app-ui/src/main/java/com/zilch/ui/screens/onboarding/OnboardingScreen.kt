@@ -20,15 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-
-private val BgColor = Color(0xFF0D1117)
-private val SurfaceColor = Color(0xFF161B22)
-private val SurfaceVariant = Color(0xFF21262D)
-private val Primary = Color(0xFF58A6FF)
-private val Secondary = Color(0xFF3FB950)
-private val OnBackground = Color(0xFFE6EDF3)
-private val TextMuted = Color(0xFF8B949E)
-private val Emergency = Color(0xFFDA3633)
+import com.zilch.ui.theme.DarkPalette
 
 private data class OnboardingPage(
     val title: String,
@@ -49,7 +41,7 @@ private val onboardingPages = listOf(
                 "no hay vigilancia posible.",
         icon = Icons.Filled.Shield,
         gradientColors = listOf(Color(0xFF0D1117), Color(0xFF112240), Color(0xFF0D2137)),
-        accentColor = Primary,
+        accentColor = DarkPalette.primary,
     ),
     OnboardingPage(
         title = "Comunicación Cercana",
@@ -60,7 +52,7 @@ private val onboardingPages = listOf(
                 "A más personas usando Zilch, más fuerte y más lejos llega la red.",
         icon = Icons.Filled.Hub,
         gradientColors = listOf(Color(0xFF0D1117), Color(0xFF0D2B1F), Color(0xFF0D1117)),
-        accentColor = Secondary,
+        accentColor = DarkPalette.secondary,
     ),
     OnboardingPage(
         title = "Cifrado Total",
@@ -83,7 +75,7 @@ private val onboardingPages = listOf(
                 "historial, ni información de uso.",
         icon = Icons.Filled.PersonOff,
         gradientColors = listOf(Color(0xFF0D1117), Color(0xFF2D1215), Color(0xFF1A0D0D)),
-        accentColor = Emergency,
+        accentColor = DarkPalette.emergency,
     ),
 )
 
@@ -96,7 +88,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgColor)
+            .background(DarkPalette.background)
     ) {
         // Animated background gradient overlay
         val currentPage = pagerState.currentPage
@@ -132,7 +124,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                 // Zilch logo text
                 Text(
                     text = "zilch",
-                    color = OnBackground,
+                    color = DarkPalette.onBackground,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
@@ -147,7 +139,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                     TextButton(
                         onClick = onComplete,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = TextMuted,
+                            contentColor = DarkPalette.textMuted,
                         ),
                     ) {
                         Text(
@@ -194,7 +186,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                                 .height(4.dp)
                                 .clip(MaterialTheme.shapes.small)
                                 .background(
-                                    if (isSelected) page.accentColor else SurfaceVariant,
+                                    if (isSelected) page.accentColor else DarkPalette.surfaceVariant,
                                 )
                                 .then(
                                     Modifier.then(
@@ -226,7 +218,7 @@ fun OnboardingScreen(onComplete: () -> Unit) {
                                 .fillMaxWidth()
                                 .height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Primary,
+                                containerColor = DarkPalette.primary,
                                 contentColor = Color.White,
                             ),
                             shape = MaterialTheme.shapes.large,
@@ -321,7 +313,7 @@ private fun OnboardingPageContent(
                 modifier = Modifier
                     .size(110.dp)
                     .clip(MaterialTheme.shapes.extraLarge)
-                    .background(SurfaceColor.copy(alpha = 0.8f))
+                    .background(DarkPalette.surface.copy(alpha = 0.8f))
                     .border(
                         width = 1.dp,
                         brush = Brush.linearGradient(
@@ -347,7 +339,7 @@ private fun OnboardingPageContent(
         // Title
         Text(
             text = page.title,
-            color = OnBackground,
+            color = DarkPalette.onBackground,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -371,7 +363,7 @@ private fun OnboardingPageContent(
         // Description
         Text(
             text = page.description,
-            color = TextMuted,
+            color = DarkPalette.textMuted,
             fontSize = 15.sp,
             textAlign = TextAlign.Center,
             lineHeight = 24.sp,

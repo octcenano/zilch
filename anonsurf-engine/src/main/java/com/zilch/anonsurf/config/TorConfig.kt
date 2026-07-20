@@ -76,4 +76,37 @@ object TorConfig {
      * No revelamos información del dispositivo o la app.
      */
     const val ANONYMOUS_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0"
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  EMBEDDED TOR PROCESS CONFIGURATION
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Expected filename of the Tor binary.
+     * Searched in: filesDir/tor, nativeLibraryDir/libtor.so, assets/tor
+     */
+    const val TOR_BINARY_NAME = "tor"
+
+    /**
+     * Subdirectory within {filesDir} for Tor's persistent state
+     * (cached consensus, keys, etc.).
+     */
+    const val TOR_DATA_DIR_NAME = "tor_data"
+
+    /**
+     * Filename for the generated torrc configuration.
+     */
+    const val TOR_TORRC_FILE_NAME = "torrc"
+
+    /**
+     * Circuit stream timeout in seconds.
+     * Limits how long Tor will keep a circuit alive for a stream.
+     */
+    const val TOR_CIRCUIT_STREAM_TIMEOUT = 300
+
+    /**
+     * Number of entry nodes to use (default, no restriction).
+     * Set to a specific number or node list for constrained routing.
+     */
+    const val TOR_NUM_ENTRY_GUARDS = 3
 }

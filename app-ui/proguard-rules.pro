@@ -39,3 +39,36 @@
 
 # ═══ Keystore de red ═══
 -keep class android.security.** { *; }
+
+# Bouncy Castle (Ed25519 crypto)
+-keep class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
+
+# SQLCipher
+-keep class net.zetetic.** { *; }
+-dontwarn net.zetetic.**
+
+# OkHttp
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+-dontwarn okio.**
+
+# JSON parsing
+-keep class org.json.** { *; }
+
+# Coroutines
+-keep class kotlinx.coroutines.** { *; }
+
+# App data classes (needed for serialization)
+-keep class com.zilch.ui.screens.chat.ChatMessage { *; }
+-keep class com.zilch.ui.screens.chatlist.ChatPreview { *; }
+-keep class com.zilch.ui.screens.inbox.InboxMessage { *; }
+-keep class com.zilch.ui.screens.contacts.ContactUi { *; }
+-keep class com.zilch.ui.screens.contacts.TrustedPerson { *; }
+-keep class com.zilch.ui.screens.qr.QrScanState { *; }
+-keep class com.zilch.ui.components.TorStatus { *; }
+
+# Keep data class members for Compose
+-keepclassmembers class * {
+    @androidx.compose.runtime.Composable <methods>;
+}

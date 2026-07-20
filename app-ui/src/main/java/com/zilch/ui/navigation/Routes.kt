@@ -38,4 +38,11 @@ object Routes {
     /** Llamada de voz por BLE */
     const val VOICE_CALL = "voice_call/{peerNodeId}"
     fun voiceCall(peerNodeId: String) = "voice_call/$peerNodeId"
+
+    /** Lista de grupos */
+    const val GROUP_LIST = "groups"
+
+    /** Chat de un grupo */
+    const val GROUP_CHAT = "group_chat/{groupId}"
+    fun groupChat(groupId: String) = "group_chat/$groupId"
 }

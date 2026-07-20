@@ -24,6 +24,9 @@
     <!-- ═══ PERMISOS DE CÁMARA (para escaneo QR) ═══ -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- ═══ PERMISOS DE NOTIFICACIONES LOCALES ═══ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- ═══ PERMISOS DE SERVICIO EN PRIMER PLANO ═══ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
@@ -37,6 +40,7 @@
         android:name=".ZilchApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Zilch"

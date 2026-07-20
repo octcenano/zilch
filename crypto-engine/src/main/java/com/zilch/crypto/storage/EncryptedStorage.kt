@@ -317,6 +317,113 @@ object EncryptedStorage {
         return messages.reversed()
     }
 
+    // ═══ Mensajes de chat (UI layer) ════════════════════════════════════
+
+    fun storeChatMessage(
+        messageId: String,
+        peerNodeId: String,
+        content: String,
+        isFromLocal: Boolean,
+        timestampMs: Long,
+        status: String = "SENT"
+    ) {
+        val db = database ?: return
+        db.execSQL(
+            """INSERT OR REPLACE INTO chat_messages
+               (message_id, peer_node_id, content, is_from_local, timestamp_ms, status)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            arrayOf(messageId, peerNodeId, content, isFromLocal, timestampMs, status)
+        )
+    }
+
+    fun getChatMessages(peerNodeId: String, limit: Int = 200): List<ChatMessageRecord> {
+        val db = database ?: return emptyList()
+        val cursor = db.rawQuery(
+            """SELECT message_id, peer_node_id, content, is_from_local, timestamp_ms, status
+               FROM chat_messages
+               WHERE peer_node_id = ?
+               ORDER BY timestamp_ms ASC
+               LIMIT ?""",
+            arrayOf(peerNodeId, limit)
+        )
+        val messages = mutableListOf<ChatMessageRecord>()
+        cursor.use {
+            while (it.moveToNext()) {
+                messages.add(
+                    ChatMessageRecord(
+                        messageId = it.getString(0),
+                        peerNodeId = it.getString(1),
+                        content = it.getString(2),
+                        isFromLocal = it.getInt(3) == 1,
+                        timestampMs = it.getLong(4),
+                        status = it.getString(5)
+                    )
+                )
+            }
+        }
+        return messages
+    }
+
+    fun getAllChatMessages(): Map<String, List<ChatMessageRecord>> {
+        val db = database ?: return emptyMap()
+        val cursor = db.rawQuery(
+            """SELECT message_id, peer_node_id, content, is_from_local, timestamp_ms, status
+               FROM chat_messages
+               ORDER BY timestamp_ms ASC""",
+            null
+        )
+        val result = mutableMapOf<String, MutableList<ChatMessageRecord>>()
+        cursor.use {
+            while (it.moveToNext()) {
+                val record = ChatMessageRecord(
+                    messageId = it.getString(0),
+                    peerNodeId = it.getString(1),
+                    content = it.getString(2),
+                    isFromLocal = it.getInt(3) == 1,
+                    timestampMs = it.getLong(4),
+                    status = it.getString(5)
+                )
+                result.getOrPut(record.peerNodeId) { mutableListOf() }.add(record)
+            }
+        }
+        return result
+    }
+
+    fun updateMessageStatus(messageId: String, status: String) {
+        database?.execSQL(
+            "UPDATE chat_messages SET status = ? WHERE message_id = ?",
+            arrayOf(status, messageId)
+        )
+    }
+
+    fun searchMessages(query: String): List<ChatMessageRecord> {
+        val db = database ?: return emptyList()
+        val cursor = db.rawQuery(
+            """SELECT message_id, peer_node_id, content, is_from_local, timestamp_ms, status
+               FROM chat_messages
+               WHERE content LIKE ?
+               ORDER BY timestamp_ms DESC
+               LIMIT 50""",
+            arrayOf("%$query%")
+        )
+        val messages = mutableListOf<ChatMessageRecord>()
+        cursor.use {
+            while (it.moveToNext()) {
+                messages.add(
+                    ChatMessageRecord(
+                        messageId = it.getString(0),
+                        peerNodeId = it.getString(1),
+                        content = it.getString(2),
+                        isFromLocal = it.getInt(3) == 1,
+                        timestampMs = it.getLong(4),
+                        status = it.getString(5)
+                    )
+                )
+            }
+        }
+        return messages
+    }
+
     // ═══ Limpieza Forense ══════════════════════════════════════════
 
     /**
@@ -414,6 +521,21 @@ object EncryptedStorage {
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_node_id)")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp_ms)")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_relay_ttl ON relay_queue(ttl)")
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                message_id TEXT PRIMARY KEY,
+                peer_node_id TEXT NOT NULL,
+                content TEXT NOT NULL,
+                is_from_local INTEGER NOT NULL DEFAULT 0,
+                timestamp_ms INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'SENT'
+            )
+        """
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_chat_messages_peer ON chat_messages(peer_node_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp ON chat_messages(timestamp_ms)")
     }
 
     // ═══ Derivación de passphrase ══════════════════════════════════
@@ -456,5 +578,14 @@ object EncryptedStorage {
         val encryptedPayload: ByteArray,
         val timestampMs: Long,
         val type: String
+    )
+
+    data class ChatMessageRecord(
+        val messageId: String,
+        val peerNodeId: String,
+        val content: String,
+        val isFromLocal: Boolean,
+        val timestampMs: Long,
+        val status: String = "SENT"  // SENT, DELIVERED, READ
     )
 }

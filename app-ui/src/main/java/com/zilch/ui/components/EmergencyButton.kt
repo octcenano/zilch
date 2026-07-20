@@ -3,7 +3,7 @@ package com.zilch.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -11,16 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zilch.ui.theme.DarkPalette
-import kotlinx.coroutines.delay
 
 /**
  * EmergencyButton — Barra roja persistente de "Cerrar y Destruir".
@@ -32,13 +29,12 @@ import kotlinx.coroutines.delay
  * El botón de emergencia está SIEMPRE visible en la parte inferior
  * de la pantalla. No se puede ocultar, minimizar o cubrir.
  *
- * Flujo de activación:
- * 1. Mantener presionado 3 segundos → Confirmación automática
- * 2. Confirmación → Destruye identidad, contactos, Kill Switch
+ * Flujo de activación (doble toque):
+ * 1. Primer toque → Señal de confirmación ("Toque de nuevo para destruir")
+ * 2. Segundo toque → Destruye identidad, contactos, Kill Switch
  *
- * ¿Por qué mantener 3 segundos?
- * Para prevenir activaciones accidentales mientras se mantiene
- * la accesibilidad (no requiere precisión fina, solo paciencia).
+ * El doble toque previene activaciones accidentales mientras mantiene
+ * la accesibilidad: no requiere precisión fina, solo dos toques simples.
  *
  * El botón usa un gradiente rojo oscuro que se intensifica
  * con la interacción, proporcionando feedback visual claro.
@@ -48,8 +44,7 @@ fun EmergencyButton(
     onEmergencyTriggered: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var holdProgress by remember { mutableFloatStateOf(0f) }
-    var isHolding by remember { mutableStateOf(false) }
+    var confirming by remember { mutableStateOf(false) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -63,26 +58,10 @@ fun EmergencyButton(
     )
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isHolding) DarkPalette.emergency else DarkPalette.emergencyDark,
+        targetValue = if (confirming) DarkPalette.emergency else DarkPalette.emergencyDark,
         animationSpec = tween(200),
         label = "bg_color"
     )
-
-    // Animate progress while holding
-    LaunchedEffect(isHolding) {
-        if (isHolding) {
-            val steps = 100
-            val stepDelay = 3000L / steps // 3 seconds total
-            for (i in 1..steps) {
-                holdProgress = i / steps.toFloat()
-                delay(stepDelay)
-            }
-            // Completed the hold — trigger emergency
-            onEmergencyTriggered()
-        } else {
-            holdProgress = 0f
-        }
-    }
 
     Box(
         modifier = modifier
@@ -96,14 +75,12 @@ fun EmergencyButton(
                     )
                 )
             )
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        isHolding = true
-                        awaitRelease()
-                        isHolding = false
-                    }
-                )
+            .clickable {
+                if (confirming) {
+                    onEmergencyTriggered()
+                } else {
+                    confirming = true
+                }
             }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
@@ -120,24 +97,13 @@ fun EmergencyButton(
             )
 
             Text(
-                text = if (isHolding) "MANTENGA PARA DESTRUIR" else "CERRAR Y DESTRUIR",
+                text = if (confirming) "TOQUE DE NUEVO PARA DESTRUIR" else "CERRAR Y DESTRUIR",
                 color = DarkPalette.onError,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp,
                 textAlign = TextAlign.Center
             )
-
-            if (isHolding) {
-                LinearProgressIndicator(
-                    progress = holdProgress,
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .height(3.dp),
-                    color = DarkPalette.onError,
-                    trackColor = DarkPalette.onError.copy(alpha = 0.3f),
-                )
-            }
         }
     }
 }

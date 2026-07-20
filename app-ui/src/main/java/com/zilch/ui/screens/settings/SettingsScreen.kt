@@ -17,17 +17,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// ── Palette ──────────────────────────────────────────────────────────────
-private val BgColor = Color(0xFF0D1117)
-private val SurfaceColor = Color(0xFF161B22)
-private val SurfaceVariant = Color(0xFF21262D)
-private val Primary = Color(0xFF58A6FF)
-private val Secondary = Color(0xFF3FB950)
-private val OnBackground = Color(0xFFE6EDF3)
-private val TextMuted = Color(0xFF8B949E)
-private val Emergency = Color(0xFFDA3633)
-private val Warning = Color(0xFFD29922)
+import com.zilch.ui.theme.DarkPalette
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -51,7 +41,7 @@ private fun fingerprintPreview(fingerprint: String): String {
 private fun SectionHeader(title: String) {
     Text(
         text = title.uppercase(),
-        color = TextMuted,
+        color = DarkPalette.textMuted,
         fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 1.2.sp,
@@ -67,7 +57,7 @@ private fun SectionHeader(title: String) {
 private fun SettingsRow(
     icon: @Composable () -> Unit,
     label: String,
-    labelColor: Color = OnBackground,
+    labelColor: Color = DarkPalette.onBackground,
     trailing: @Composable (() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
@@ -81,7 +71,7 @@ private fun SettingsRow(
 
     Row(
         modifier = rowMod
-            .background(SurfaceColor)
+            .background(DarkPalette.surface)
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -110,7 +100,7 @@ private fun SettingsRow(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint = TextMuted,
+                tint = DarkPalette.textMuted,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -138,7 +128,7 @@ private fun RowDivider() {
             .fillMaxWidth()
             .height(0.5.dp)
             .padding(horizontal = 20.dp)
-            .background(SurfaceVariant.copy(alpha = 0.6f))
+            .background(DarkPalette.surfaceVariant.copy(alpha = 0.6f))
     )
 }
 
@@ -152,9 +142,12 @@ fun SettingsScreen(
     torStatusText: String,
     torStatusColor: Color,
     isKillSwitchActive: Boolean,
+    notificationsEnabled: Boolean = true,
     onVerifyTor: () -> Unit,
     onShowQr: () -> Unit,
-    onEmergencyDestroy: () -> Unit
+    onEmergencyDestroy: () -> Unit,
+    onShowTrustedPersons: () -> Unit = {},
+    onToggleNotifications: () -> Unit = {}
 ) {
     val clipboardManager = LocalClipboardManager.current
     var expandedFingerprint by remember { mutableStateOf(false) }
@@ -164,13 +157,13 @@ fun SettingsScreen(
     if (showDestroyConfirm) {
         AlertDialog(
             onDismissRequest = { showDestroyConfirm = false },
-            containerColor = SurfaceColor,
-            titleContentColor = Emergency,
+            containerColor = DarkPalette.surface,
+            titleContentColor = DarkPalette.emergency,
             title = { Text("Destruir todos los datos", fontWeight = FontWeight.Bold) },
             text = {
                 Text(
                     "Esta acción es irreversible. Se eliminarán todas las llaves, mensajes y configuración de este dispositivo.",
-                    color = OnBackground
+                    color = DarkPalette.onBackground
                 )
             },
             confirmButton = {
@@ -180,26 +173,26 @@ fun SettingsScreen(
                         onEmergencyDestroy()
                     }
                 ) {
-                    Text("Destruir", color = Emergency, fontWeight = FontWeight.Bold)
+                    Text("Destruir", color = DarkPalette.emergency, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDestroyConfirm = false }) {
-                    Text("Cancelar", color = TextMuted)
+                    Text("Cancelar", color = DarkPalette.textMuted)
                 }
             }
         )
     }
 
     Scaffold(
-        containerColor = BgColor,
+        containerColor = DarkPalette.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text("Configuración", color = OnBackground, fontWeight = FontWeight.Bold)
+                    Text("Configuración", color = DarkPalette.onBackground, fontWeight = FontWeight.Bold)
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = BgColor
+                    containerColor = DarkPalette.background
                 )
             )
         }
@@ -218,7 +211,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceColor)
+                colors = CardDefaults.cardColors(containerColor = DarkPalette.surface)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -227,14 +220,14 @@ fun SettingsScreen(
                     // Compact fingerprint (2-line monospace)
                     Text(
                         text = fingerprintPreview(fingerprint),
-                        color = Secondary,
+                        color = DarkPalette.secondary,
                         fontSize = 13.sp,
                         fontFamily = FontFamily.Monospace,
                         lineHeight = 18.sp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                SurfaceVariant,
+                                DarkPalette.surfaceVariant,
                                 RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 12.dp, vertical = 10.dp)
@@ -254,11 +247,11 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.ContentCopy,
                             contentDescription = null,
-                            tint = Primary,
+                            tint = DarkPalette.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("Copiar", color = Primary, fontSize = 13.sp)
+                        Text("Copiar", color = DarkPalette.primary, fontSize = 13.sp)
                     }
 
                     Spacer(Modifier.height(4.dp))
@@ -266,7 +259,7 @@ fun SettingsScreen(
                     // Node ID
                     Text(
                         text = "Node: ${truncateNodeId(nodeId)}",
-                        color = TextMuted,
+                        color = DarkPalette.textMuted,
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace
                     )
@@ -274,6 +267,60 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(12.dp))
+
+            // ─────────────────────────────────────────────────────────────
+            //  SECCIÓN — Notificaciones
+            // ─────────────────────────────────────────────────────────────
+            SectionHeader("Notificaciones")
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(DarkPalette.surface)
+            ) {
+                SettingsRow(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = null,
+                            tint = DarkPalette.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    label = "Notificaciones",
+                    trailing = {
+                        Switch(
+                            checked = notificationsEnabled,
+                            onCheckedChange = { onToggleNotifications() },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = DarkPalette.onPrimary,
+                                checkedTrackColor = DarkPalette.primary,
+                                uncheckedThumbColor = DarkPalette.textMuted,
+                                uncheckedTrackColor = DarkPalette.surfaceVariant
+                            )
+                        )
+                    }
+                )
+
+                RowDivider()
+
+                SettingsRow(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Mail,
+                            contentDescription = null,
+                            tint = DarkPalette.textMuted,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    label = "Vista previa de mensajes",
+                    labelColor = DarkPalette.textMuted
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
 
             // ─────────────────────────────────────────────────────────────
             //  SECCIÓN — Seguridad
@@ -285,8 +332,24 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceColor)
+                    .background(DarkPalette.surface)
             ) {
+                // Personas de confianza
+                SettingsRow(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = DarkPalette.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    label = "Personas de confianza",
+                    onClick = onShowTrustedPersons
+                )
+
+                RowDivider()
+
                 // Estado de Tor
                 SettingsRow(
                     icon = {
@@ -319,7 +382,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.Shield,
                             contentDescription = null,
-                            tint = if (isKillSwitchActive) Secondary else TextMuted,
+                            tint = if (isKillSwitchActive) DarkPalette.secondary else DarkPalette.textMuted,
                             modifier = Modifier.size(20.dp)
                         )
                     },
@@ -328,13 +391,13 @@ fun SettingsScreen(
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = if (isKillSwitchActive)
-                                Secondary.copy(alpha = 0.15f)
+                                DarkPalette.secondary.copy(alpha = 0.15f)
                             else
-                                SurfaceVariant
+                                DarkPalette.surfaceVariant
                         ) {
                             Text(
                                 text = if (isKillSwitchActive) "Activo" else "Inactivo",
-                                color = if (isKillSwitchActive) Secondary else TextMuted,
+                                color = if (isKillSwitchActive) DarkPalette.secondary else DarkPalette.textMuted,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(
@@ -354,12 +417,12 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.WifiFind,
                             contentDescription = null,
-                            tint = Primary,
+                            tint = DarkPalette.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     },
                     label = "Verificar conexión Tor",
-                    labelColor = Primary,
+                    labelColor = DarkPalette.primary,
                     onClick = onVerifyTor
                 )
             }
@@ -376,7 +439,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceColor)
+                    .background(DarkPalette.surface)
             ) {
                 // Mostrar QR
                 SettingsRow(
@@ -384,7 +447,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.QrCode2,
                             contentDescription = null,
-                            tint = Primary,
+                            tint = DarkPalette.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     },
@@ -400,7 +463,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.Fingerprint,
                             contentDescription = null,
-                            tint = Primary,
+                            tint = DarkPalette.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     },
@@ -412,7 +475,7 @@ fun SettingsScreen(
                             else
                                 Icons.Filled.ExpandMore,
                             contentDescription = null,
-                            tint = TextMuted,
+                            tint = DarkPalette.textMuted,
                             modifier = Modifier.size(18.dp)
                         )
                     },
@@ -424,12 +487,12 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(SurfaceVariant)
+                            .background(DarkPalette.surfaceVariant)
                             .padding(16.dp)
                     ) {
                         Text(
                             text = fingerprint,
-                            color = Secondary,
+                            color = DarkPalette.secondary,
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
                             lineHeight = 18.sp
@@ -446,11 +509,11 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Filled.ContentCopy,
                                 contentDescription = null,
-                                tint = Primary,
+                                tint = DarkPalette.primary,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text("Copiar fingerprint completo", color = Primary, fontSize = 13.sp)
+                            Text("Copiar fingerprint completo", color = DarkPalette.primary, fontSize = 13.sp)
                         }
                     }
                 }
@@ -468,7 +531,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceColor)
+                    .background(DarkPalette.surface)
             ) {
                 // Base de datos cifrada
                 SettingsRow(
@@ -476,7 +539,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.Lock,
                             contentDescription = null,
-                            tint = Secondary,
+                            tint = DarkPalette.secondary,
                             modifier = Modifier.size(20.dp)
                         )
                     },
@@ -484,7 +547,7 @@ fun SettingsScreen(
                     trailing = {
                         Text(
                             text = "Activa",
-                            color = Secondary,
+                            color = DarkPalette.secondary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -499,17 +562,17 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.DeleteForever,
                             contentDescription = null,
-                            tint = Emergency,
+                            tint = DarkPalette.emergency,
                             modifier = Modifier.size(20.dp)
                         )
                     },
                     label = "Destruir todos los datos",
-                    labelColor = Emergency,
+                    labelColor = DarkPalette.emergency,
                     trailing = {
                         Icon(
                             imageVector = Icons.Filled.Warning,
                             contentDescription = null,
-                            tint = Emergency,
+                            tint = DarkPalette.emergency,
                             modifier = Modifier.size(16.dp)
                         )
                     },
@@ -529,19 +592,19 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceColor)
+                    .background(DarkPalette.surface)
             ) {
                 SettingsRow(
                     icon = {
                         Icon(
                             imageVector = Icons.Filled.Info,
                             contentDescription = null,
-                            tint = TextMuted,
+                            tint = DarkPalette.textMuted,
                             modifier = Modifier.size(20.dp)
                         )
                     },
                     label = "Zilch v0.1.0-alpha",
-                    labelColor = TextMuted
+                    labelColor = DarkPalette.textMuted
                 )
 
                 RowDivider()
@@ -551,12 +614,12 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.Code,
                             contentDescription = null,
-                            tint = TextMuted,
+                            tint = DarkPalette.textMuted,
                             modifier = Modifier.size(20.dp)
                         )
                     },
                     label = "FOSS — Código abierto",
-                    labelColor = TextMuted
+                    labelColor = DarkPalette.textMuted
                 )
 
                 RowDivider()
@@ -566,12 +629,12 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Filled.Gavel,
                             contentDescription = null,
-                            tint = TextMuted,
+                            tint = DarkPalette.textMuted,
                             modifier = Modifier.size(20.dp)
                         )
                     },
                     label = "Licencia MIT",
-                    labelColor = TextMuted
+                    labelColor = DarkPalette.textMuted
                 )
             }
 

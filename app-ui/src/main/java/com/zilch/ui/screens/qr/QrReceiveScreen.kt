@@ -14,14 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import com.zilch.crypto.CryptoEngine
+import com.zilch.crypto.qr.QrEncoder
 import com.zilch.ui.components.FingerprintDisplay
 import com.zilch.ui.theme.DarkPalette
 import kotlinx.coroutines.delay
@@ -60,44 +58,26 @@ fun QrReceiveScreen(
     fingerprint: String,
     timeRemainingSeconds: Int,
     onBack: () -> Unit,
+    onNavigateToContacts: () -> Unit = {},
     onEmergencyTriggered: (() -> Unit)? = null
 ) {
-    // ═══ QR generation via ZXing ═══
+    val context = LocalContext.current
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var qrGenerating by remember { mutableStateOf(true) }
 
     LaunchedEffect(fingerprint) {
-        qrGenerating = true
-        qrBitmap = try {
-            val payload = org.json.JSONObject().apply {
-                put("fingerprint", fingerprint)
-                put("ts", System.currentTimeMillis())
-            }.toString()
-            val hints = mapOf(
-                EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.M,
-                EncodeHintType.MARGIN to 1,
-                EncodeHintType.CHARACTER_SET to "UTF-8"
-            )
-            val writer = QRCodeWriter()
-            val bitMatrix = writer.encode(
-                payload, BarcodeFormat.QR_CODE, 512, 512, hints
-            )
-            val width = bitMatrix.width
-            val height = bitMatrix.height
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-            for (x in 0 until width) {
-                for (y in 0 until height) {
-                    bitmap.setPixel(
-                        x, y,
-                        if (bitMatrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
-                    )
-                }
+        while (true) {
+            qrGenerating = true
+            qrBitmap = try {
+                val cryptoEngine = CryptoEngine.getInstance(context)
+                val identity = cryptoEngine.identityManager.currentIdentity
+                QrEncoder.generateQrBitmap(identity, "ble:${identity.nodeId}")
+            } catch (_: Exception) {
+                null
             }
-            bitmap
-        } catch (_: Exception) {
-            null
+            qrGenerating = false
+            delay(5 * 60 * 1000L)
         }
-        qrGenerating = false
     }
 
     Scaffold(

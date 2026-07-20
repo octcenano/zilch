@@ -39,3 +39,7 @@
 # ═══ Bluetooth GATT callbacks (reflexión del framework) ═══
 -keep class com.zilch.blemesh.gatt.GattServerManager$* { *; }
 -keep class com.zilch.blemesh.gatt.GattClientManager$* { *; }
+
+# Bouncy Castle
+-keep class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**

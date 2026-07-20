@@ -38,3 +38,8 @@
     public static int e(...);
     public static int i(...);
 }
+
+# OkHttp
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+-dontwarn okio.**
